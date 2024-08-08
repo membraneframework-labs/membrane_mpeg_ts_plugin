@@ -110,7 +110,8 @@ defmodule Membrane.MPEG.TS.Demuxer do
   def handle_end_of_stream(:input, ctx, state) do
     demuxer = TS.Demuxer.end_of_stream(state.demuxer)
     state = %{state | closed: true, demuxer: demuxer}
-    process_end_of_stream(state, ctx.pads)
+    Process.send_after(self(), :eos, 5_000)
+    {[], state}
   end
 
   defp process_end_of_stream(state, pads) do
@@ -148,6 +149,11 @@ defmodule Membrane.MPEG.TS.Demuxer do
   @impl true
   def handle_event(:input, event, _ctx, state) do
     {[forward: event], state}
+  end
+
+  @impl true
+  def handle_info(:eos, ctx, state) do
+    process_end_of_stream(state, ctx.pads)
   end
 
   @impl true
